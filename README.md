@@ -24,20 +24,9 @@ No API keys to configure. No SDKs to learn. Just talk to your agent.
 
 **Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or [Codex CLI](https://github.com/openai/codex), [Node.js](https://nodejs.org/) 18+
 
-### Claude Code
-
 ```bash
-git clone https://github.com/LessieAI/lessie-skill.git ~/.claude/skills/lessie
+npx skills add LessieAI/lessie-skill -y -g
 ```
-
-Restart Claude Code. The `/lessie` skill is now available.
-
-### Codex
-
-```bash
-git clone https://github.com/LessieAI/lessie-skill.git ~/.codex/skills/lessie
-```
-
 
 Restart your agent. The `/lessie` skill is now available.
 
@@ -74,12 +63,6 @@ Claude: Let me check if Lessie CLI is available.
 You:    Find Engineering Managers at Stripe
 
 Claude: Bash(lessie find-people \
-        --filter '{"person_titles":["Engineering Manager"],"organization_domains":["stripe.com"]}' \…)
-        ⎿  Error: MCP error -32001: Request timed out
-
-        Hybrid strategy timed out. Retrying with the faster saas_only strategy.
-
-        Bash(lessie find-people \
         --filter '{"person_titles":["Engineering Manager"],"organization_domains":["stripe.com"]}' \…)
         ⎿  {"success":true,"search_id":"mcp_5173a4e1a389","people":[…]}
            … +85 lines
