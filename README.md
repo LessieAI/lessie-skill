@@ -14,6 +14,12 @@
 
 No API keys to configure. No SDKs to learn. Just talk to your agent.
 
+## Get Started
+
+1. **Create a free account** at [app.lessie.ai](https://app.lessie.ai/login?utm_source=github&utm_channel=skill) — new accounts include trial credits
+2. **Install the skill** (see below)
+3. **Run `/lessie`** in your agent — it will handle auth automatically
+
 ## Install — 30 seconds
 
 **Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) or [Codex CLI](https://github.com/openai/codex), [Node.js](https://nodejs.org/) 18+
