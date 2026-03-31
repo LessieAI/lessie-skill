@@ -134,6 +134,10 @@ Always inform the user before opening the browser — never silently redirect.
 
 ## Agent behavior rules
 
+### CRITICAL: Read references before first CLI call
+
+**Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Do NOT guess parameter names — the CLI uses `--filter` with JSON, not `--title`/`--company` style flags.
+
 ### Entity disambiguation
 
 When a user mentions a company name that could refer to multiple entities (e.g., "Manus" could be Manus AI, Manus Bio, Manus Plus, etc.), disambiguate before searching:
@@ -152,6 +156,25 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 | `enrich_people` | `lessie enrich-people` | Fill missing profile data for known individuals (email, phone, LinkedIn, work history) |
 | `review_people` | `lessie review-people` | Deep-qualify **ambiguous** candidates via web research — skip for obvious matches/mismatches |
 
+```bash
+# Find people — uses --filter with JSON, NOT --title/--company flags
+lessie find-people \
+  --filter '{"person_titles":["Engineering Manager"],"organization_domains":["stripe.com"]}' \
+  --checkpoint 'EMs at Stripe' \
+  --strategy hybrid \
+  --target-count 10
+
+# Enrich people — provide name + domain for best accuracy
+lessie enrich-people \
+  --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]'
+
+# Review people — deep-qualify from a previous search
+lessie review-people \
+  --search-id 'mcp_xxx' \
+  --person-ids '["id1","id2"]' \
+  --checkpoints '[{"key":"Relevance","description":"...","title":"Relevance","category":"career"}]'
+```
+
 ### Companies
 
 | Tool | CLI command | When to use |
@@ -161,12 +184,37 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 | `get_company_job_postings` | `lessie job-postings` | View active job openings (needs `organization_id` from enrich) |
 | `search_company_news` | `lessie company-news` | Find recent news articles (needs `organization_id` from enrich) |
 
+```bash
+# Find organizations
+lessie find-orgs \
+  --keyword-tags '["AI","SaaS"]' \
+  --locations '["China"]' \
+  --employees '["51,200"]'
+
+# Enrich organization
+lessie enrich-org --domains '["stripe.com"]'
+
+# Job postings (needs org ID from enrich)
+lessie job-postings --org-id '5f5e100...'
+
+# Company news
+lessie company-news --org-ids '["5f5e100..."]'
+```
+
 ### Web research
 
 | Tool | CLI command | When to use |
 |------|-------------|-------------|
 | `web_search` | `lessie web-search` | General web search; cached results make follow-up `web_fetch` free |
 | `web_fetch` | `lessie web-fetch` | Extract specific info from a URL via AI summarization |
+
+```bash
+# Web search
+lessie web-search --query 'OpenAI official website' --count 5
+
+# Web fetch
+lessie web-fetch --url 'https://example.com' --instruction 'Extract job title and company'
+```
 
 ## Detailed references
 
