@@ -114,8 +114,13 @@ After setup, try:
 ### Before sending emails
 
 1. **Always check accounts first**: Call `list_email_accounts_with_unread` to get available sender addresses.
-2. **Always check quota**: Call `get_email_quota` for the chosen sender to confirm quota is sufficient.
-3. **Never guess email addresses**: Only use addresses returned by the account list.
+2. **No email accounts bound**: If the account list is empty, tell the user they have no email accounts linked yet and guide them to visit **https://app.lessie.ai/** to bind an email account. Open the URL using the appropriate system command:
+   - macOS: `open "https://app.lessie.ai/"`
+   - Linux: `xdg-open "https://app.lessie.ai/"`
+   - Windows: `start "https://app.lessie.ai/"`
+   Then ask the user to return after binding and retry.
+3. **Always check quota**: Call `get_email_quota` for the chosen sender to confirm quota is sufficient.
+4. **Never guess email addresses**: Only use addresses returned by the account list.
 
 ### Replying to emails
 
