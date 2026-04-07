@@ -19,13 +19,13 @@ npx skills add LessieAI/lessie-skill -y -g
 
 | Skill | What it does |
 |-------|--------------|
-| [/lessie](lessie/) | Find people, enrich contacts, research companies, web search |
-| [/lessie-email](lessie-email/) | Send emails, manage inbox & threads, drafts, bulk campaigns (Gmail/Outlook/SendGrid) |
+| [/people-search](people-search/) | Find people, enrich contacts, research companies, web search |
+| [/lessie-email](lessie-email/) | Send, manage, and automate emails across Gmail, Outlook, and SendGrid |
 
 ## See it work
 
 ```
-You:    /lessie
+You:    /people-search
 
 Claude: Let me check if Lessie CLI is available.
 
@@ -83,6 +83,40 @@ Claude: Bash(lessie find-people \
         - See more results — paginate to the next batch
 ```
 
+## Lessie Email
+
+Multi-provider email management — send, receive, draft, and bulk-send emails from your agent.
+
+### Capabilities
+
+- **Email Accounts** — view linked accounts with unread counts
+- **Send & Receive** — send emails (HTML, CC/BCC, attachments, replies), view details, manage read status
+- **Threads** — list, read, and manage email conversation threads
+- **Drafts** — create, update, delete, and list email drafts
+- **Bulk Campaigns** — create bulk email tasks with auto-scheduling, pause/resume, and delivery stats
+
+### Available Tools
+
+| Category | Tools |
+|----------|-------|
+| Accounts | `list_email_accounts_with_unread` |
+| Email | `send_email`, `get_email_detail`, `list_sent_emails`, `get_email_quota`, `delete_email`, `set_email_read_status` |
+| Threads | `list_threads`, `get_thread_messages`, `delete_thread`, `set_thread_read_status` |
+| Drafts | `create_draft`, `update_draft`, `delete_draft`, `list_drafts` |
+| Bulk Tasks | `create_task`, `list_tasks`, `get_task_detail`, `delete_task`, `pause_task`, `resume_task` |
+
+### Quick start
+
+After setup, try:
+
+- "Show me my email accounts and unread counts"
+- "Send an email from alice@company.com to bob@example.com about the Q2 report"
+- "List my recent email threads"
+- "Create a bulk email campaign to these 50 contacts"
+- "Draft an email to the engineering team about the sprint review"
+
+> **No email accounts?** If you haven't linked an email yet, the agent will guide you to [app.lessie.ai](https://app.lessie.ai/) to bind your Gmail, Outlook, or SendGrid account.
+
 ## Alternative: MCP Server (no CLI needed)
 
 Skip the CLI install. Add Lessie as an MCP server instead:
@@ -127,9 +161,9 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 
 ## Uninstall
 
-- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/lessie ~/.claude/skills/lessie-email`
+- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/people-search ~/.claude/skills/lessie-email`
 - **MCP:** Remove the `"lessie"` and `"lessie-email"` entries from your MCP config and `rm -rf ~/.lessie/`
-- **Codex:** `rm -rf ~/.codex/skills/lessie ~/.codex/skills/lessie-email` (or `.agents/skills/`)
+- **Codex:** `rm -rf ~/.codex/skills/people-search ~/.codex/skills/lessie-email` (or `.agents/skills/`)
 
 ## Credits & Pricing
 
@@ -148,7 +182,9 @@ Lessie is credit-based. New accounts get free trial credits. View balance and bu
 
 **Auth expired?** `lessie auth` — reopens the browser for login
 
-**Skill not showing up?** Make sure your CLAUDE.md references the lessie skill.
+**Skill not showing up?** Make sure your CLAUDE.md references the skill (people-search or lessie-email).
+
+**No email accounts?** Visit [app.lessie.ai](https://app.lessie.ai/) to bind your Gmail, Outlook, or SendGrid account.
 
 ## Links
 
