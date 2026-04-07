@@ -1,6 +1,6 @@
 # Lessie Skills
 
-> AI-native people search and enrichment — as agent skills.
+> AI-native people search, enrichment, and email management — as agent skills.
 
 This repo contains skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex), and any agent that supports the [SKILL.md standard](https://github.com/anthropics/claude-code).
 
@@ -20,6 +20,7 @@ npx skills add LessieAI/lessie-skill -y -g
 | Skill | What it does |
 |-------|--------------|
 | [/lessie](lessie/) | Find people, enrich contacts, research companies, web search |
+| [/lessie-email](lessie-email/) | Send emails, manage inbox & threads, drafts, bulk campaigns (Gmail/Outlook/SendGrid) |
 
 ## See it work
 
@@ -92,6 +93,8 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 | Cursor | `~/.cursor/mcp.json` |
 | Codex | `~/.codex/config.json` |
 
+**Lessie (people search & enrichment):**
+
 ```json
 {
   "mcpServers": {
@@ -106,11 +109,27 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 }
 ```
 
+**Lessie Email (email management):**
+
+```json
+{
+  "mcpServers": {
+    "lessie-email": {
+      "command": "npx",
+      "args": ["-y", "@lessie/mcp-server"],
+      "env": {
+        "LESSIE_REMOTE_MCP_URL": "https://app.lessie.ai/email-api/mcp-public/mcp"
+      }
+    }
+  }
+}
+```
+
 ## Uninstall
 
-- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/lessie`
-- **MCP:** Remove the `"lessie"` entry from your MCP config and `rm -rf ~/.lessie/`
-- **Codex:** `rm -rf ~/.codex/skills/lessie` (or `.agents/skills/lessie`)
+- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/lessie ~/.claude/skills/lessie-email`
+- **MCP:** Remove the `"lessie"` and `"lessie-email"` entries from your MCP config and `rm -rf ~/.lessie/`
+- **Codex:** `rm -rf ~/.codex/skills/lessie ~/.codex/skills/lessie-email` (or `.agents/skills/`)
 
 ## Credits & Pricing
 
