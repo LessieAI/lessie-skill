@@ -19,12 +19,12 @@ npx skills add LessieAI/lessie-skill -y -g
 
 | Skill | What it does |
 |-------|--------------|
-| [/lessie](lessie/) | Find people, enrich contacts, research companies, web search |
+| [/people-search](people-search/) | Find people, enrich contacts, research companies, web search |
 
 ## See it work
 
 ```
-You:    /lessie
+You:    /people-search
 
 Claude: Let me check if Lessie CLI is available.
 
@@ -108,9 +108,9 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 
 ## Uninstall
 
-- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/lessie`
+- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/people-search`
 - **MCP:** Remove the `"lessie"` entry from your MCP config and `rm -rf ~/.lessie/`
-- **Codex:** `rm -rf ~/.codex/skills/lessie` (or `.agents/skills/lessie`)
+- **Codex:** `rm -rf ~/.codex/skills/people-search` (or `.agents/skills/people-search`)
 
 ## Credits & Pricing
 
@@ -129,7 +129,7 @@ Lessie is credit-based. New accounts get free trial credits. View balance and bu
 
 **Auth expired?** `lessie auth` — reopens the browser for login
 
-**Skill not showing up?** Make sure your CLAUDE.md references the lessie skill.
+**Skill not showing up?** Make sure your CLAUDE.md references the people-search skill.
 
 ## Links
 
