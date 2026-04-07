@@ -1,5 +1,5 @@
 ---
-name: lessie
+name: people-search
 metadata:
   version: 2.1.0
   tags: [people-search, b2b, enrichment, kol, recruiting, web-research]
@@ -134,6 +134,40 @@ Always inform the user before opening the browser — never silently redirect.
 
 ## Agent behavior rules
 
+### CRITICAL: Confirm before every credit-consuming action
+
+Every Lessie tool call costs credits. Credit costs per tool:
+
+| Tool | Cost |
+|------|------|
+| `find-people` | **20 credits** per search |
+| `enrich-people` | 1 credit × number of people (only charged for successful matches) |
+| `review-people` | 1 credit × number of people |
+| `enrich-org` | 1 credit |
+| `find-orgs` | 1 credit |
+| `job-postings` | 1 credit |
+| `company-news` | 1 credit |
+| `web-search` | 1 credit |
+| `web-fetch` | 1 credit |
+
+**Before executing any command**, you MUST:
+
+1. Tell the user what you are about to do and the estimated cost (e.g., "I'll enrich 3 people — this costs ~3 credits").
+2. **Wait for explicit confirmation** before executing.
+3. Never batch multiple credit-consuming calls without confirming the full plan first.
+
+**Exception — skip confirmation** if the user has explicitly said they don't want to be prompted (e.g., "don't ask me every time", "just do it", "skip confirmations"). In that case, proceed directly but still log what you executed and the credits spent after each call.
+
+### CRITICAL: Report credit usage after every call
+
+After each conversation turn that involved one or more Lessie tool calls, append a one-line summary of credits consumed. Format:
+
+> Used `<tool-name>`, cost <N> credit(s).
+
+If multiple tools were called in the same turn, combine them:
+
+> Used `web-search` + `enrich-org`, cost 2 credits total.
+
 ### CRITICAL: Read references before first CLI call
 
 **Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Do NOT guess parameter names — the CLI uses `--filter` with JSON, not `--title`/`--company` style flags.
@@ -153,7 +187,7 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 | Tool | CLI command | When to use |
 |------|-------------|-------------|
 | `find_people` | `lessie find-people` | Discover people by title, company, location, seniority, audience. Default strategy is `hybrid`. **If a request times out or fails, retry with `--strategy saas_only`** — it's faster (~30s vs ~60s) and more stable, though recall may be lower |
-| `enrich_people` | `lessie enrich-people` | Fill missing profile data for known individuals (email, phone, LinkedIn, work history) |
+| `enrich_people` | `lessie enrich-people` | Enrich known people with full profiles. **Two paths**: B2B (via linkedin_url or name+domain → email, phone, work history) and KOL (via twitter/instagram/tiktok/youtube username → follower count, social links). Max 10 per call |
 | `review_people` | `lessie review-people` | Deep-qualify **ambiguous** candidates via web research — skip for obvious matches/mismatches |
 
 ```bash
@@ -164,9 +198,34 @@ lessie find-people \
   --strategy hybrid \
   --target-count 10
 
-# Enrich people — provide name + domain for best accuracy
+# Enrich people (B2B) — linkedin_url is best; fallback: name + domain
+lessie enrich-people \
+  --people '[{"linkedin_url":"https://www.linkedin.com/in/samaltman/"}]'
+
+# Enrich people (B2B) — name + domain fallback
 lessie enrich-people \
   --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]'
+
+# Enrich people (B2B) — include personal emails
+lessie enrich-people \
+  --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]' \
+  --include-personal-emails
+
+# Enrich people (KOL) — Twitter/X
+lessie enrich-people \
+  --people '[{"twitter_screen_name":"elonmusk"}]'
+
+# Enrich people (KOL) — Instagram
+lessie enrich-people \
+  --people '[{"instagram_username":"natgeo"}]'
+
+# Enrich people (KOL) — TikTok
+lessie enrich-people \
+  --people '[{"tiktok_username":"charlidamelio"}]'
+
+# Enrich people (KOL) — YouTube
+lessie enrich-people \
+  --people '[{"youtube_username":"MrBeast"}]'
 
 # Review people — deep-qualify from a previous search
 lessie review-people \

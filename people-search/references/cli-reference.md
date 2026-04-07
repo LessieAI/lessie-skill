@@ -10,9 +10,34 @@ lessie find-people \
   --strategy hybrid \
   --target-count 20
 
-# Enrich people
+# Enrich people (B2B) — linkedin_url is best; fallback: name + domain
+lessie enrich-people \
+  --people '[{"linkedin_url":"https://www.linkedin.com/in/samaltman/"}]'
+
+# Enrich people (B2B) — name + domain fallback
 lessie enrich-people \
   --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]'
+
+# Enrich people (B2B) — include personal emails
+lessie enrich-people \
+  --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]' \
+  --include-personal-emails
+
+# Enrich people (KOL) — Twitter/X
+lessie enrich-people \
+  --people '[{"twitter_screen_name":"elonmusk"}]'
+
+# Enrich people (KOL) — Instagram
+lessie enrich-people \
+  --people '[{"instagram_username":"natgeo"}]'
+
+# Enrich people (KOL) — TikTok
+lessie enrich-people \
+  --people '[{"tiktok_username":"charlidamelio"}]'
+
+# Enrich people (KOL) — YouTube
+lessie enrich-people \
+  --people '[{"youtube_username":"MrBeast"}]'
 
 # Review people (from a previous search)
 lessie review-people \
