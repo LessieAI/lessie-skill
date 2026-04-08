@@ -172,6 +172,27 @@ If multiple tools were called in the same turn, combine them:
 
 **Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Do NOT guess parameter names — the CLI uses `--filter` with JSON, not `--title`/`--company` style flags.
 
+### Search mode disambiguation (B2B vs KOL)
+
+Lessie supports two search modes with different data sources and result types:
+
+- **B2B mode**: Searches professional databases (LinkedIn-based). Best for finding people by job title, company, seniority, or industry. Returns work email, phone, employment history.
+- **KOL mode**: Searches social media platforms (Instagram, YouTube, TikTok, Twitter/X). Best for finding influencers, content creators, or public figures by audience, follower count, or content topic. Returns social links, follower counts.
+
+**When the user's intent is ambiguous** — i.e., the query could reasonably target either professionals on LinkedIn or creators on social media — you MUST ask the user to clarify before searching. Present both options concisely:
+
+Example ambiguous query: *"Find individuals who have hands-on experience with brain-monitoring sleep devices to share their insights."*
+
+This could mean:
+1. **B2B**: Product managers, engineers, or researchers at sleep-tech companies (via LinkedIn)
+2. **KOL**: Health/tech influencers who have reviewed or used such devices (via social media)
+
+Ask: "This could be LinkedIn professionals (PMs, engineers at sleep-tech companies) or social media creators who review sleep devices. Which direction do you prefer — or both?"
+
+**When intent is clear**, proceed directly:
+- "Find CTOs at fintech startups" → B2B (obvious)
+- "Find beauty influencers on Instagram with 100k+ followers" → KOL (obvious)
+
 ### Entity disambiguation
 
 When a user mentions a company name that could refer to multiple entities (e.g., "Manus" could be Manus AI, Manus Bio, Manus Plus, etc.), disambiguate before searching:
