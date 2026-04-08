@@ -26,13 +26,12 @@ lessie find-people \
 lessie find-people \
   --filter '{"person_titles":["ML Engineer"],"person_seniorities":["senior"],"person_not_titles":["Intern"]}' \
   --checkpoint 'Senior ML engineers' \
-  --strategy saas_only --target-count 20
+  --target-count 20
 
 # KOL / influencer search
 lessie find-people \
   --filter '{"platform":"instagram","follower_min":100000,"content_topics":["beauty"]}' \
-  --checkpoint '美国美妆博主' \
-  --strategy web_only
+  --checkpoint '美国美妆博主'
 
 # Single person lookup by name + company
 lessie find-people \
