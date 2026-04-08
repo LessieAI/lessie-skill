@@ -52,7 +52,7 @@ lessie status
 
 ### Mode B: MCP Server
 
-Add to your MCP config (Claude Code `~/.claude/mcp.json`, Cursor `~/.cursor/mcp.json`, etc.):
+Add to your MCP config (Claude Code `~/.claude.json`, Cursor `~/.cursor/mcp.json`, Codex `~/.codex/config.toml`, etc.):
 
 ```json
 {
@@ -71,7 +71,7 @@ Add to your MCP config (Claude Code `~/.claude/mcp.json`, Cursor `~/.cursor/mcp.
 ### Uninstall
 
 - **CLI:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/`
-- **MCP:** Remove the `"lessie"` entry from your `.mcp.json` and `rm -rf ~/.lessie/`
+- **MCP:** Remove the `"lessie"` entry from your `.json` and `rm -rf ~/.lessie/`
 
 ## Quick start
 
