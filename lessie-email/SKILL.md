@@ -48,6 +48,18 @@ Remove the `"lessie-email"` entry from your MCP config and run `rm -rf ~/.lessie
 5. After the user confirms, call `authorize` again to verify the connection.
 6. If authorization fails (timeout, denied, port conflict), follow the diagnostic hints returned by `authorize` and retry.
 
+### Troubleshooting: Authorization repeatedly fails
+
+**Root cause**: stale `lessie-mcp-server` processes from old sessions occupy the callback port (19836), forcing port fallback and corrupting OAuth client state.
+
+**Fix** — kill stale processes and clear storage, then re-authorize:
+
+```bash
+ps aux | grep 'lessie-mcp-server' | grep -v grep | awk '{print $2}' | xargs kill 2>/dev/null
+rm -rf ~/.lessie/
+lsof -i :19836 | grep LISTEN  # should return nothing
+```
+
 Always inform the user before opening the browser — never silently redirect.
 
 ## Quick start
