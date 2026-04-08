@@ -52,7 +52,7 @@ lessie status
 
 ### Mode B: MCP Server
 
-Add to your MCP config (Claude Code `~/.claude/mcp.json`, Cursor `~/.cursor/mcp.json`, etc.):
+Add to your MCP config (Claude Code `~/.claude.json`, Cursor `~/.cursor/mcp.json`, Codex `~/.codex/config.toml`, etc.):
 
 ```json
 {
@@ -71,7 +71,7 @@ Add to your MCP config (Claude Code `~/.claude/mcp.json`, Cursor `~/.cursor/mcp.
 ### Uninstall
 
 - **CLI:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/`
-- **MCP:** Remove the `"lessie"` entry from your `.mcp.json` and `rm -rf ~/.lessie/`
+- **MCP:** Remove the `"lessie"` entry from your `.json` and `rm -rf ~/.lessie/`
 
 ## Quick start
 
@@ -190,50 +190,6 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 | `enrich_people` | `lessie enrich-people` | Enrich known people with full profiles. **Two paths**: B2B (via linkedin_url or name+domain → email, phone, work history) and KOL (via twitter/instagram/tiktok/youtube username → follower count, social links). Max 10 per call |
 | `review_people` | `lessie review-people` | Deep-qualify **ambiguous** candidates via web research — skip for obvious matches/mismatches |
 
-```bash
-# Find people — uses --filter with JSON, NOT --title/--company flags
-lessie find-people \
-  --filter '{"person_titles":["Engineering Manager"],"organization_domains":["stripe.com"]}' \
-  --checkpoint 'EMs at Stripe' \
-  --strategy hybrid \
-  --target-count 10
-
-# Enrich people (B2B) — linkedin_url is best; fallback: name + domain
-lessie enrich-people \
-  --people '[{"linkedin_url":"https://www.linkedin.com/in/samaltman/"}]'
-
-# Enrich people (B2B) — name + domain fallback
-lessie enrich-people \
-  --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]'
-
-# Enrich people (B2B) — include personal emails
-lessie enrich-people \
-  --people '[{"first_name":"Sam","last_name":"Altman","domain":"openai.com"}]' \
-  --include-personal-emails
-
-# Enrich people (KOL) — Twitter/X
-lessie enrich-people \
-  --people '[{"twitter_screen_name":"elonmusk"}]'
-
-# Enrich people (KOL) — Instagram
-lessie enrich-people \
-  --people '[{"instagram_username":"natgeo"}]'
-
-# Enrich people (KOL) — TikTok
-lessie enrich-people \
-  --people '[{"tiktok_username":"charlidamelio"}]'
-
-# Enrich people (KOL) — YouTube
-lessie enrich-people \
-  --people '[{"youtube_username":"MrBeast"}]'
-
-# Review people — deep-qualify from a previous search
-lessie review-people \
-  --search-id 'mcp_xxx' \
-  --person-ids '["id1","id2"]' \
-  --checkpoints '[{"key":"Relevance","description":"...","title":"Relevance","category":"career"}]'
-```
-
 ### Companies
 
 | Tool | CLI command | When to use |
@@ -243,37 +199,12 @@ lessie review-people \
 | `get_company_job_postings` | `lessie job-postings` | View active job openings (needs `organization_id` from enrich) |
 | `search_company_news` | `lessie company-news` | Find recent news articles (needs `organization_id` from enrich) |
 
-```bash
-# Find organizations
-lessie find-orgs \
-  --keyword-tags '["AI","SaaS"]' \
-  --locations '["China"]' \
-  --employees '["51,200"]'
-
-# Enrich organization
-lessie enrich-org --domains '["stripe.com"]'
-
-# Job postings (needs org ID from enrich)
-lessie job-postings --org-id '5f5e100...'
-
-# Company news
-lessie company-news --org-ids '["5f5e100..."]'
-```
-
 ### Web research
 
 | Tool | CLI command | When to use |
 |------|-------------|-------------|
 | `web_search` | `lessie web-search` | General web search; cached results make follow-up `web_fetch` free |
 | `web_fetch` | `lessie web-fetch` | Extract specific info from a URL via AI summarization |
-
-```bash
-# Web search
-lessie web-search --query 'OpenAI official website' --count 5
-
-# Web fetch
-lessie web-fetch --url 'https://example.com' --instruction 'Extract job title and company'
-```
 
 ## Detailed references
 

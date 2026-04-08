@@ -98,7 +98,7 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 ```json
 {
   "mcpServers": {
-    "lessie": {
+    "lessie_mcp": {
       "command": "npx",
       "args": ["-y", "@lessie/mcp-server"],
       "env": {
