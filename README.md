@@ -89,7 +89,7 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 
 | Client | Config file |
 |--------|-------------|
-| Claude Code | `~/.claude/mcp.json` |
+| Claude Code | `~/.claude.json` |
 | Cursor | `~/.cursor/mcp.json` |
 | Codex | `~/.codex/config.json` |
 
@@ -114,7 +114,7 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 ```json
 {
   "mcpServers": {
-    "lessie-email": {
+    "lessie-email-mcp": {
       "command": "npx",
       "args": ["-y", "@lessie/mcp-server"],
       "env": {

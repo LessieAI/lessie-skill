@@ -21,7 +21,7 @@ Add the Lessie Email MCP server to your MCP config (Claude Code `~/.claude.json`
 ```json
 {
   "mcpServers": {
-    "lessie-email": {
+    "lessie-email-mcp": {
       "command": "npx",
       "args": ["-y", "@lessie/mcp-server"],
       "env": {
