@@ -5,7 +5,7 @@ metadata:
   tags: [email, outreach, bulk-send, drafts, inbox]
 description: >
   Send, manage, and automate emails across multiple providers (Gmail, Outlook,
-  SendGrid) via MCP. Use this skill whenever the user wants to send emails, check
+  Official Email) via MCP. Use this skill whenever the user wants to send emails, check
   inbox, manage email threads, create bulk email campaigns, manage drafts, or
   check email accounts and quotas. Trigger this skill when the user mentions
   sending mail, checking inbox, email campaigns, drafts, follow-ups, read/unread

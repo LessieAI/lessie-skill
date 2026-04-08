@@ -20,7 +20,7 @@ npx skills add LessieAI/lessie-skill -y -g
 | Skill | What it does |
 |-------|--------------|
 | [/people-search](people-search/) | Find people, enrich contacts, research companies, web search |
-| [/lessie-email](lessie-email/) | Send, manage, and automate emails across Gmail, Outlook, and SendGrid |
+| [/lessie-email](lessie-email/) | Send, manage, and automate emails across Gmail, Outlook, and Official Email |
 
 ## See it work
 
@@ -150,7 +150,7 @@ Lessie is credit-based. New accounts get free trial credits. View balance and bu
 
 **Skill not showing up?** Make sure your CLAUDE.md references the skill (people-search or lessie-email).
 
-**No email accounts?** Visit [app.lessie.ai](https://app.lessie.ai/) to bind your Gmail, Outlook, or SendGrid account.
+**No email accounts?** Visit [app.lessie.ai](https://app.lessie.ai/) to bind your Gmail, Outlook, or Official Email account.
 
 ## Links
 
