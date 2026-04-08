@@ -16,7 +16,7 @@ description: >
 
 ## Setup
 
-Add the Lessie Email MCP server to your MCP config (Claude Code `~/.claude/mcp.json`, Cursor `~/.cursor/mcp.json`, etc.):
+Add the Lessie Email MCP server to your MCP config (Claude Code `~/.claude.json`, Cursor `~/.cursor/mcp.json`, Codex `~/.codex/config.toml`, etc.):
 
 ```json
 {
