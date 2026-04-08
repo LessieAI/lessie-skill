@@ -1,6 +1,6 @@
 # Lessie Skills
 
-> AI-native people search and enrichment — as agent skills.
+> AI-native people search, enrichment, and email management — as agent skills.
 
 This repo contains skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex), and any agent that supports the [SKILL.md standard](https://github.com/anthropics/claude-code).
 
@@ -20,6 +20,7 @@ npx skills add LessieAI/lessie-skill -y -g
 | Skill | What it does |
 |-------|--------------|
 | [/people-search](people-search/) | Find people, enrich contacts, research companies, web search |
+| [/lessie-email](lessie-email/) | Send, manage, and automate emails across Gmail, Outlook, and SendGrid |
 
 ## See it work
 
@@ -88,9 +89,11 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 
 | Client | Config file |
 |--------|-------------|
-| Claude Code | `~/.claude/mcp.json` |
+| Claude Code | `~/.claude.json` |
 | Cursor | `~/.cursor/mcp.json` |
 | Codex | `~/.codex/config.json` |
+
+**Lessie (people search & enrichment):**
 
 ```json
 {
@@ -106,11 +109,27 @@ Skip the CLI install. Add Lessie as an MCP server instead:
 }
 ```
 
+**Lessie Email (email management):**
+
+```json
+{
+  "mcpServers": {
+    "lessie-email-mcp": {
+      "command": "npx",
+      "args": ["-y", "@lessie/mcp-server"],
+      "env": {
+        "LESSIE_REMOTE_MCP_URL": "https://app.lessie.ai/email-api/mcp-public/mcp"
+      }
+    }
+  }
+}
+```
+
 ## Uninstall
 
-- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/people-search`
-- **MCP:** Remove the `"lessie"` entry from your MCP config and `rm -rf ~/.lessie/`
-- **Codex:** `rm -rf ~/.codex/skills/people-search` (or `.agents/skills/people-search`)
+- **CLI + Skills:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/ ~/.claude/skills/people-search ~/.claude/skills/lessie-email`
+- **MCP:** Remove the `"lessie"` and `"lessie-email"` entries from your MCP config and `rm -rf ~/.lessie/`
+- **Codex:** `rm -rf ~/.codex/skills/people-search ~/.codex/skills/lessie-email` (or `.agents/skills/`)
 
 ## Credits & Pricing
 
@@ -129,7 +148,9 @@ Lessie is credit-based. New accounts get free trial credits. View balance and bu
 
 **Auth expired?** `lessie auth` — reopens the browser for login
 
-**Skill not showing up?** Make sure your CLAUDE.md references the people-search skill.
+**Skill not showing up?** Make sure your CLAUDE.md references the skill (people-search or lessie-email).
+
+**No email accounts?** Visit [app.lessie.ai](https://app.lessie.ai/) to bind your Gmail, Outlook, or SendGrid account.
 
 ## Links
 
