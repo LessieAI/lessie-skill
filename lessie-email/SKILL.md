@@ -38,15 +38,16 @@ Remove the `"lessie-email"` entry from your MCP config and run `rm -rf ~/.lessie
 
 ## Authorization
 
-1. Call `authorize` to check connection status.
-2. **If already authorized** → proceed to use tools directly.
-3. **If not authorized** → `authorize` returns an authorization URL. Tell the user you need to open a browser for Lessie login/registration, and open it using the appropriate system command:
-   - macOS: `open "<url>"`
-   - Linux: `xdg-open "<url>"`
-   - Windows: `start "<url>"`
-4. Tell the user the browser has been opened and they need to complete login/registration.
-5. After the user confirms, call `authorize` again to verify the connection.
-6. If authorization fails (timeout, denied, port conflict), follow the diagnostic hints returned by `authorize` and retry.
+1. **Directly call `use_lessie`** to perform the desired action — skip authorization if already connected.
+2. **If `use_lessie` fails** (e.g., returns "not authorized" or "remote MCP server not connected") → call `authorize` to start the OAuth flow:
+   - `authorize` returns an authorization URL. Tell the user you need to open a browser for Lessie login/registration, and open it using the appropriate system command:
+     - macOS: `open "<url>"`
+     - Linux: `xdg-open "<url>"`
+     - Windows: `start "<url>"`
+   - Tell the user the browser has been opened and they need to complete login/registration.
+   - After the user confirms, call `authorize` again to verify the connection.
+   - If authorization fails (timeout, denied, port conflict), follow the diagnostic hints returned by `authorize` and retry.
+3. **After authorization succeeds** → retry the original `use_lessie` call.
 
 ### Troubleshooting: Authorization repeatedly fails
 
