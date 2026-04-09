@@ -1,7 +1,7 @@
 ---
 name: people-search
 metadata:
-  version: 2.1.0
+  version: 2.2.0
   tags: [people-search, b2b, enrichment, kol, recruiting, web-research]
 description: >
   Search, qualify, and enrich people and companies. Use this skill whenever the
@@ -72,6 +72,41 @@ Add to your MCP config (Claude Code `~/.claude.json`, Cursor `~/.cursor/mcp.json
 
 - **CLI:** `npm uninstall -g @lessie/cli && rm -rf ~/.lessie/`
 - **MCP:** Remove the `"lessie"` entry from your `.json` and `rm -rf ~/.lessie/`
+
+## Version check
+
+Run these checks once at the start of each session, before mode detection. Both checks are non-blocking — if any command fails (network error, timeout), skip silently and proceed.
+
+### Skill version
+
+1. Read current local version from this file's metadata `version` field above.
+2. Fetch remote version:
+   ```bash
+   curl -sf --max-time 5 https://raw.githubusercontent.com/LessieAI/lessie-skill/main/people-search/SKILL.md | head -5 | grep 'version:' | head -1 | awk '{print $2}'
+   ```
+3. If the remote version is newer than the local version → tell the user:
+   > ⬆️ A newer version of people-search skill is available ({local} → {remote}). Run this command to update:
+   > ```
+   > npx skills add LessieAI/lessie-skill -y -g
+   > ```
+4. If versions match or check fails → skip, say nothing.
+
+### CLI version
+
+1. Get local CLI version:
+   ```bash
+   lessie --version 2>/dev/null || npx @lessie/cli --version 2>/dev/null
+   ```
+2. Get latest published version:
+   ```bash
+   npm view @lessie/cli version 2>/dev/null
+   ```
+3. If the remote version is newer → tell the user:
+   > ⬆️ A newer version of Lessie CLI is available ({local} → {remote}). Run this command to update:
+   > ```
+   > npm install -g @lessie/cli
+   > ```
+4. If versions match or either command fails → skip, say nothing.
 
 ## Quick start
 

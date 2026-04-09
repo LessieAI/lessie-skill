@@ -1,7 +1,7 @@
 ---
 name: lessie-email
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   tags: [email, outreach, bulk-send, drafts, inbox]
 description: >
   Send, manage, and automate emails across multiple providers (Gmail, Outlook,
@@ -35,6 +35,22 @@ Add the Lessie Email MCP server to your MCP config (Claude Code `~/.claude.json`
 ### Uninstall
 
 Remove the `"lessie-email"` entry from your MCP config and run `rm -rf ~/.lessie/`.
+
+## Version check
+
+Run this check once at the start of each session. Non-blocking — if any command fails, skip silently.
+
+1. Read current local version from this file's metadata `version` field above.
+2. Fetch remote version:
+   ```bash
+   curl -sf --max-time 5 https://raw.githubusercontent.com/LessieAI/lessie-skill/main/lessie-email/SKILL.md | head -5 | grep 'version:' | head -1 | awk '{print $2}'
+   ```
+3. If the remote version is newer → tell the user:
+   > ⬆️ A newer version of lessie-email skill is available ({current} → {remote}). Run this command to update:
+   > ```
+   > npx skills add LessieAI/lessie-skill -y -g
+   > ```
+4. If versions match or check fails → skip, say nothing.
 
 ## Authorization
 
