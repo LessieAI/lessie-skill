@@ -88,3 +88,50 @@ lessie web-fetch --url '...' --instruction 'Extract job title, company, and soci
 **Validation:**
 - After triage, present results to the user grouped by confidence level (strong match / needs review / excluded) before running `review_people`, so the user can adjust criteria if needed.
 - If `find-people` returns 0 results, do NOT immediately call review. Instead: relax filters (broader titles, remove location), try `--strategy saas_only`, or verify the domain is correct.
+
+## 6. Unlock contact emails (from your own search results)
+
+After `find-people`, the emails in the response are **masked** (`****@domain.com`). To get the actual email, call `unlock_emails` with the `search_id` + the `person_id` of each person you want.
+
+```bash
+# Step 1: find — capture search_id + person_ids
+lessie find-people --filter '{"person_titles":["CTO"]}' --checkpoint 'CTOs' --target-count 10
+# response → { "search_id": "mcp_...", "people": [{"person_id":"...", ...}, ...] }
+
+# Step 2: unlock — pass the search_id + a subset of person_ids
+lessie unlock-emails \
+  --search-id <from-step-1> \
+  --person-ids '["<id-of-person-1>","<id-of-person-2>"]'
+```
+
+**Use `unlock_emails`, not `enrich-people`, for this flow.** `enrich-people` re-queries the underlying providers and bills again; `unlock_emails` reuses your unlock history (same person, any prior search → free).
+
+**Validation:**
+- The `summary` field reports `newly_unlocked` (charged) vs `already_unlocked` (free). Cross-check `points_deducted = newly_unlocked × price_per_unlock`.
+- `non_unlockable` persons have no enrichable handle on file — there is no way to get their email; do NOT retry.
+- Hard cap of 50 person_ids per call — split larger lists.
+
+## 7. Unlock email by handle (no prior search)
+
+When the user gives you a LinkedIn URL / Twitter username / Instagram handle directly — and you have **not** run `find-people` for that person — use `unlock_email_by_handle`.
+
+```bash
+# Single handle — user pasted a LinkedIn URL, you extracted the handle
+lessie unlock-email-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"}]'
+
+# Batch (max 10) across platforms
+lessie unlock-email-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"},{"platform":"twitter","handle":"elonmusk"}]'
+```
+
+**Critical: NOT idempotent.** Server does no dedup. Calling the same `(platform, handle)` twice charges twice. **Track within your conversation which handles you've already resolved** and skip re-queries.
+
+**Pass bare handles, NOT URLs.** Parse the URL yourself:
+- `https://linkedin.com/in/samaltman` → `{"platform":"linkedin","handle":"samaltman"}`
+- `https://twitter.com/elonmusk` → `{"platform":"twitter","handle":"elonmusk"}`
+- `https://instagram.com/natgeo/` → `{"platform":"instagram","handle":"natgeo"}`
+
+**Validation:**
+- Verify the handle once before bulk: a typo costs nothing if it resolves to `not_found`, but if it accidentally resolves to a real different person's email you pay for the wrong result.
+- If the user has any historical `search_id` containing this person, prefer Pattern 6 (`unlock_emails`) — it dedups across all your searches.

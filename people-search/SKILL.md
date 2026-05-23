@@ -1,7 +1,7 @@
 ---
 name: people-search
 metadata:
-  version: 2.2.0
+  version: 2.3.0
   tags: [people-search, b2b, enrichment, kol, recruiting, web-research]
 description: >
   Search, qualify, and enrich people and companies. Use this skill whenever the
@@ -184,6 +184,8 @@ Every Lessie tool call costs credits. Credit costs per tool:
 | `company-news` | 1 credit |
 | `web-search` | 1 credit |
 | `web-fetch` | 1 credit |
+| `unlock_emails` | configurable rate × number of **newly unlocked** persons. Already-unlocked persons (across any of your prior searches) are free. Failed lookups not charged |
+| `unlock_email_by_handle` | configurable rate × number of **successful** unlocks. `not_found` and `failed` are free. **Not idempotent** — re-running on the same handle re-charges |
 
 **Before executing any command**, you MUST:
 
@@ -245,6 +247,15 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 | `find_people` | `lessie find-people` | Discover people by title, company, location, seniority, audience. Default strategy is `hybrid`. **If a request times out or fails, retry with `--strategy saas_only`** — it's faster (~30s vs ~60s) and more stable, though recall may be lower |
 | `enrich_people` | `lessie enrich-people` | Enrich known people with full profiles. **Two paths**: B2B (via linkedin_url or name+domain → email, phone, work history) and KOL (via twitter/instagram/tiktok/youtube username → follower count, social links). Max 10 per call |
 | `review_people` | `lessie review-people` | Deep-qualify **ambiguous** candidates via web research — skip for obvious matches/mismatches |
+
+### Contact unlock
+
+| Tool | CLI command | When to use |
+|------|-------------|-------------|
+| `unlock_emails` | `lessie unlock-emails` | Unlock email addresses for people from a previous `find_people` result. **Per-user idempotent**: people you've already unlocked (in any search) cost 0. Takes `search_id` + `person_ids` (1–50) |
+| `unlock_email_by_handle` | `lessie unlock-email-by-handle` | Unlock email by an explicit `(platform, handle)`, **without a prior search**. Takes a list of `{platform, handle}` (1–10). **NOT idempotent** — repeat calls on the same handle re-charge. Use only when the handle isn't in any `find_people` you've run |
+
+**Decision rule:** if the person came from your own `find_people` result → use `unlock_emails` (re-unlocks are free). If you got the handle from outside lessie (a LinkedIn URL the user pasted, a manual mention, etc.) → use `unlock_email_by_handle`.
 
 ### Companies
 

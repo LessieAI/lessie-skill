@@ -235,6 +235,125 @@ lessie review-people \
 
 ---
 
+## lessie unlock-emails
+
+Unlock email addresses for people from a previous `lessie find-people` result. **Per-user idempotent**: people you've already unlocked (in this search or any other) are returned at 0 cost. Only newly unlocked emails are charged.
+
+### Commands
+
+```bash
+# Basic — unlock 3 persons from a recent search
+lessie unlock-emails \
+  --search-id mcp_abc123 \
+  --person-ids '["6578a1b2c3d4e5f6","6578a1b2c3d4e5f7","6578a1b2c3d4e5f8"]'
+
+# After find-people, capture search_id + person_ids then unlock
+lessie find-people --filter '{"person_titles":["CTO"]}' --checkpoint 'CTOs' --target-count 3
+# → take the search_id from the response and the person_id of each person
+lessie unlock-emails --search-id <search_id> --person-ids '["<id1>","<id2>","<id3>"]'
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--search-id <id>` | Yes | Search ID from a prior `find-people` response you own |
+| `--person-ids '[...]'` | Yes | JSON array of `person_id` values (the `person_id` field of each `find-people` result), **1–50 items** |
+
+### Response
+
+```json
+{
+  "success": true,
+  "search_id": "mcp_abc123",
+  "results": [
+    {"person_id": "6578…6", "status": "newly_unlocked", "email": "alice@stripe.com"},
+    {"person_id": "6578…7", "status": "already_unlocked", "email": "bob@stripe.com"},
+    {"person_id": "6578…8", "status": "non_unlockable", "email": null, "reason": "no_enrichable_handle"}
+  ],
+  "summary": {"total_requested": 3, "already_unlocked": 1, "newly_unlocked": 1, "non_unlockable": 1, "failed": 0},
+  "points_deducted": 1,
+  "price_per_unlock": 1
+}
+```
+
+Per-person `status` values:
+- `newly_unlocked` — email resolved for the first time; charged
+- `already_unlocked` — you've unlocked this person before; free
+- `non_unlockable` — no enrichable handle on this row; free
+- `failed` — resolution attempted but failed (API error, etc.); free
+- `not_in_search` — the `person_id` doesn't belong to this `search_id`; free
+
+### AI usage guidance
+
+- **Use this — not `enrich-people` — to get emails from your own search results.** `enrich-people` will re-query the underlying providers and bill again; `unlock_emails` reuses your unlock history.
+- After `find-people`, you'll have `search_id` + each person's `person_id` directly in the response. Pass them through.
+- If you hit the 50-person cap, split into batches.
+- Cross-search idempotency: if you unlocked the same person in a prior search and they appear again in a new search, the second unlock is still free.
+
+---
+
+## lessie unlock-email-by-handle
+
+Unlock email addresses for known social handles, **without requiring a prior `find-people` search**. Pass a list of `{platform, handle}` pairs. Charged per successful unlock; `not_found` and `failed` are free.
+
+**Important**: this tool is **NOT idempotent**. Repeated calls on the same `(platform, handle)` will re-charge each time it resolves. Use `unlock-emails` instead when the person came from a `find-people` you ran.
+
+### Commands
+
+```bash
+# Single handle
+lessie unlock-email-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"}]'
+
+# Batch (max 10) — mix platforms
+lessie unlock-email-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"},{"platform":"twitter","handle":"elonmusk"},{"platform":"instagram","handle":"natgeo"}]'
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--handles '[...]'` | Yes | JSON array of HandleSpec, **1–10 items**. Each item: `{"platform": <one of linkedin/youtube/instagram/tiktok/twitter>, "handle": <bare handle string>}` |
+
+### HandleSpec fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `platform` | `string` (enum) | One of `linkedin`, `youtube`, `instagram`, `tiktok`, `twitter` — **lowercase** |
+| `handle` | `string` | The **bare handle**, NOT a URL. For LinkedIn pass the `/in/<handle>` segment (e.g. `samaltman`), for Twitter the screen name, for Instagram/TikTok/YouTube the username. 1–200 chars |
+
+### Response
+
+```json
+{
+  "success": true,
+  "results": [
+    {"platform": "linkedin", "handle": "samaltman", "status": "unlocked", "email": "sam@openai.com"},
+    {"platform": "instagram", "handle": "fake_xyz", "status": "not_found", "email": null},
+    {"platform": "tiktok", "handle": "weird", "status": "failed", "email": null, "reason": "enrich_exception"}
+  ],
+  "summary": {"total_requested": 3, "unlocked": 1, "not_found": 1, "failed": 1},
+  "points_deducted": 1,
+  "price_per_unlock": 1
+}
+```
+
+Per-handle `status`:
+- `unlocked` — email resolved; charged
+- `not_found` — no email available for this handle; free
+- `failed` — exception during resolution; free
+
+### AI usage guidance
+
+- **Pass bare handles, never URLs.** `samaltman`, not `https://linkedin.com/in/samaltman`. The agent should parse the URL itself before calling.
+- **Verify the handle once before bulk operations.** Because of non-idempotency, a wrong handle costs you nothing on `not_found` — but if it accidentally resolves to a real different person's email, you pay for the wrong result. Spot-check first.
+- **Prefer `unlock_emails` when applicable.** If you ran `find-people` and the person was in the results, that flow's idempotency saves credits. Use `unlock_email_by_handle` only when the handle wasn't surfaced by a search.
+- **Cache results in your turn's context.** Since the server doesn't dedup, *you* should: track which `(platform, handle)` pairs you've already resolved this conversation and not re-query.
+
+---
+
 ## lessie find-orgs
 
 Discover companies by name, keyword, location, size, funding, and hiring activity. At least one search option is required.
