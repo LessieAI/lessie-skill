@@ -1,48 +1,40 @@
 # Workflow Patterns
 
-## 1. Search people at a company (company name only, domain unknown)
+## 1. Search people at a company (company name ambiguous)
 
-**Always resolve the company domain first.** Domain accuracy directly determines search quality.
+If the company name could be multiple entities (`Manus` → Manus AI / Manus Bio / Manus Plus / ...), disambiguate first. Otherwise the agent searches the wrong company and you waste 20 credits.
 
-Priority chain: `web_search` result → `enrich_organization` verification → agent knowledge (lowest)
-
-**CLI mode:**
+**CLI:**
 ```bash
-# Step 1: Find domain
+# Step 1: find the candidate domain
 lessie web-search --query 'CompanyName official website' --count 3
 
-# Step 2: Verify domain
+# Step 2: verify it's the right company
 lessie enrich-org --domains '["candidate.com"]'
 
-# Step 3: Search people with verified domain
-lessie find-people \
-  --filter '{"person_titles":["CTO"]}' \
-  --checkpoint 'CTOs at CompanyName' \
-  --domain '["verified_domain.com"]'
+# Step 3: now pass the resolved company + domain into the NL query
+lessie find-people --query "CTOs at CompanyName (candidate.com)" --target-count 10
 ```
 
-**MCP mode:**
-1. `web_search("CompanyName official website")` → extract candidate domain
-2. `enrich_organization(domains=["candidate.com"])` → verify
-3. `find_people(filter={...}, website_domain=["verified_domain"])`
-
-See [domain-resolution.md](domain-resolution.md) for the full decision tree and examples.
+See [domain-resolution.md](domain-resolution.md) for the full decision tree.
 
 **Validation:**
 - After Step 2, verify the enriched company name matches the user's intent. If the returned company is different, stop and confirm with the user before proceeding.
-- After Step 3, if 0 results → try relaxing filters (remove location or broaden titles). If still 0, the domain may be wrong — go back to Step 1 with alternative search terms.
+- After Step 3, 0 results → the company name + domain in the query may still be ambiguous on the agent side. Try a more specific query (add location, industry context).
 
 ## 2. Search people at a company (domain already known)
 
 ```bash
-lessie enrich-org --domains '["stripe.com"]'
-lessie find-people --filter '{"person_titles":["Engineer"]}' --checkpoint 'Engineers at Stripe' --domain '["stripe.com"]'
+lessie enrich-org --domains '["stripe.com"]'                        # optional verify
+lessie find-people --query "10 engineers at Stripe (stripe.com)" --target-count 10
 lessie enrich-people --people '[{"first_name":"Jane","last_name":"Doe","domain":"stripe.com"}]'
 ```
 
+Just put the company name + domain into the natural-language query. The agent uses them as filter inputs internally.
+
 **Validation:**
-- If `enrich-org` returns a different primary domain than expected, use the enriched domain for `find-people`.
-- If `find-people` returns fewer results than expected, try `--strategy saas_only` or broaden the title filter.
+- If `enrich-org` returns a different primary domain than expected, use the enriched domain in the `find-people` query.
+- If `find-people` returns fewer results than expected, run a second call with a broader query (drop location or seniority qualifiers). Don't retry the exact same query — it'll return the same results.
 
 ## 3. Research a company
 
@@ -50,7 +42,7 @@ lessie enrich-people --people '[{"first_name":"Jane","last_name":"Doe","domain":
 lessie enrich-org --domains '["openai.com"]'
 lessie job-postings --org-id '...'          # from enrich result
 lessie company-news --org-ids '["..."]'
-lessie find-people --filter '{"person_seniorities":["c_suite"]}' --checkpoint 'OpenAI leadership' --domain '["openai.com"]'
+lessie find-people --query "OpenAI c-suite leadership (openai.com)" --target-count 10
 ```
 
 **Validation:**
@@ -72,7 +64,7 @@ lessie web-fetch --url '...' --instruction 'Extract job title, company, and soci
 
 ## 5. Search + qualify (find → self-judge or review)
 
-1. `lessie find-people --filter '...' --checkpoint '...'` → returns `search_id` and `people`
+1. `lessie find-people --query '<user's task verbatim>'` → returns `search_id` and `people`
 
 2. **Triage the results yourself first.** Scan the returned profiles against the user's criteria:
    - **Obviously good** (title/company/location clearly match) → keep directly, no deep review needed
@@ -87,7 +79,7 @@ lessie web-fetch --url '...' --instruction 'Extract job title, company, and soci
 
 **Validation:**
 - After triage, present results to the user grouped by confidence level (strong match / needs review / excluded) before running `review_people`, so the user can adjust criteria if needed.
-- If `find-people` returns 0 results, do NOT immediately call review. Instead: relax filters (broader titles, remove location), try `--strategy saas_only`, or verify the domain is correct.
+- If `find-people` returns 0 results, do NOT immediately call review. Instead: re-run with a broader NL query (drop location / industry qualifiers, or describe the role more loosely), or verify the company name needs disambiguation first.
 
 ## 6. Unlock contact emails (from your own search results)
 
@@ -95,7 +87,7 @@ After `find-people`, the emails in the response are **masked** (`****@domain.com
 
 ```bash
 # Step 1: find — capture search_id + person_ids
-lessie find-people --filter '{"person_titles":["CTO"]}' --checkpoint 'CTOs' --target-count 10
+lessie find-people --query "10 CTOs at tech companies" --target-count 10
 # response → { "search_id": "mcp_...", "people": [{"person_id":"...", ...}, ...] }
 
 # Step 2: unlock — pass the search_id + a subset of person_ids

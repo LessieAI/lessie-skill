@@ -55,7 +55,7 @@ Claude: Let me check if Lessie CLI is available.
 You:    Find Engineering Managers at Stripe
 
 Claude: Bash(lessie find-people \
-        --filter '{"person_titles":["Engineering Manager"],"organization_domains":["stripe.com"]}' \…)
+        --query "10 Engineering Managers at Stripe" \…)
         ⎿  {"success":true,"search_id":"mcp_5173a4e1a389","people":[…]}
            … +85 lines
 

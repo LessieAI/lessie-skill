@@ -6,105 +6,69 @@ Output is always JSON on stdout, status messages on stderr. Use `--pretty` for h
 
 ## lessie find-people
 
-Search people from Lessie's 275M+ database by title, company, location, seniority, or social audience.
+Find people matching a **natural-language task**. Pass the user's request verbatim through `--query`. The remote agent picks data sources (B2B / KOL / web), keywords, and decides when to stop. Hard ceiling of **3 tool calls + 60s wall-clock budget** per request bounds worst-case latency.
 
 ### Commands
 
 ```bash
-# B2B search by title and location
-lessie find-people \
-  --filter '{"person_titles":["CTO"],"person_locations":["United States"]}' \
-  --checkpoint 'CTOs at US tech companies'
+# B2B
+lessie find-people --query "10 senior engineers at Google in the Bay Area"
 
-# Scoped to a known domain
-lessie find-people \
-  --filter '{"person_titles":["Engineering Manager"]}' \
-  --checkpoint 'EMs at Stripe' \
-  --domain '["stripe.com"]'
+# Scoped to a known company / domain — just include it in the query
+lessie find-people --query "Engineering Managers at Stripe (stripe.com)"
 
-# With seniority and exclusions
+# With seniority + exclusions — phrase naturally
 lessie find-people \
-  --filter '{"person_titles":["ML Engineer"],"person_seniorities":["senior"],"person_not_titles":["Intern"]}' \
-  --checkpoint 'Senior ML engineers' \
+  --query "Senior ML engineers at AI companies, excluding interns and assistants" \
   --target-count 20
 
-# KOL / influencer search
-lessie find-people \
-  --filter '{"platform":"instagram","follower_min":100000,"content_topics":["beauty"]}' \
-  --checkpoint '美国美妆博主'
+# KOL / influencer
+lessie find-people --query "Instagram beauty creators with 100k+ followers in the US"
 
-# Single person lookup by name + company
-lessie find-people \
-  --filter '{"person_name":"Sam Altman","company":"OpenAI"}' \
-  --checkpoint 'Sam Altman at OpenAI'
+# Single person lookup
+lessie find-people --query "Sam Altman at OpenAI"
 
-# Exclude companies + add extra requirements
-lessie find-people \
-  --filter '{"person_titles":["CTO"],"person_locations":["US"]}' \
-  --checkpoint 'CTOs with GitHub' \
-  --exclude '{"companies":["Google"]}' \
-  --extra 'Must have GitHub account'
+# Niche / industry-specific
+lessie find-people --query "CTOs of AI startups raising Series B"
+
+# Non-English query is fine; pass the user's words verbatim and set --language to match
+lessie find-people --query "Engenheiros de machine learning em São Paulo" --language pt-BR
 ```
 
 ### Parameters
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `--filter <json>` | Yes | JSON filter object (see filter fields below). Do NOT use `--title`/`--company` flags |
-| `--checkpoint <text>` | Yes | Natural language search intent |
-| `--strategy <s>` | No | `hybrid` (default, 60-120s), `saas_only` (30-60s), `saas_first` (40-90s), `web_only` (60-120s) |
-| `--target-count <n>` | No | Target results count, 1-1000 (default: 50) |
-| `--domain <json>` | No | Company domains for precision, e.g. `'["stripe.com"]'` |
-| `--exclude <json>` | No | Exclusion conditions, e.g. `'{"companies":["Google"]}'` |
-| `--extra <text>` | No | Extra natural language requirements |
-| `--search-id <id>` | No | Custom search session ID (auto-generated if omitted) |
-| `--language <lang>` | No | Results language, e.g. `en-US`, `zh-CN` (default: `en-US`) |
+| `--query <text>` | Yes | Natural-language task, 1-2000 chars. Pass the user's request verbatim — niche industry terms are search-quality-critical |
+| `--target-count <n>` | No | How many results you want, 1-100 (default: 30). Used as a stop signal — agent stops when results >= this count |
+| `--language <lang>` | No | Output language, e.g. `en-US`, `zh-CN` (default: `en-US`) |
 
-### Filter fields (B2B)
+### Response shape
 
-| Field | Type | Example |
-|-------|------|---------|
-| `person_titles` | `string[]` | `["CTO", "VP Engineering"]` |
-| `person_not_titles` | `string[]` | `["Intern", "Assistant"]` |
-| `person_locations` | `string[]` | `["United States", "London"]` |
-| `person_seniorities` | `string[]` | `["c_suite", "vp", "director"]` |
-| `contact_email_status` | `string[]` | `["verified", "guessed", "unavailable"]` |
-| `organization_locations` | `string[]` | `["San Francisco", "China"]` |
-| `organization_num_employees_ranges` | `string[]` | `["51,200"]` |
+```json
+{
+  "success": true,
+  "search_id": "mcp_abc123",
+  "people": [...],
+  "total_found": N,
+  "after_hard_filter": N,
+  "elapsed_seconds": 12.3,
+  "strategy_used": "hybrid",
+  "checkpoints_used": [],
+  "sources_used": [],
+  "points_deducted": 20,
+  "partial": false  // only present + true if the 60s budget fired
+}
+```
 
-### Filter fields (single person)
-
-| Field | Type | Example |
-|-------|------|---------|
-| `person_name` | `string` | `"Sam Altman"` |
-| `company` | `string` | `"OpenAI"` |
-
-### Filter fields (KOL / influencer)
-
-| Field | Type | Example |
-|-------|------|---------|
-| `platform` | `string` | `instagram`, `youtube`, `tiktok`, `twitter`, ... |
-| `follower_min` | `number` | `100000` |
-| `content_topics` | `string[]` | `["beauty", "skincare"]` |
-
-### Seniority values
-
-`owner`, `founder`, `c_suite`, `partner`, `vp`, `head`, `director`, `manager`, `senior`, `entry`, `intern`
-
-### Strategy reference
-
-| Strategy | Speed | Best for |
-|----------|-------|----------|
-| `hybrid` | 60-120s | Default, highest recall |
-| `saas_only` | 30-60s | Structured B2B queries, fastest |
-| `saas_first` | 40-90s | SaaS first, fallback to web |
-| `web_only` | 60-120s | Public figures, KOLs |
+When `"partial": true`, the response also carries `"timeout_reason": "wall_clock_60s"` — the agent hit the 60s cap; results are whatever was collected before timeout.
 
 ### AI usage guidance
 
-- **Always resolve the company domain first** when the user provides only a company name. See [domain-resolution.md](domain-resolution.md).
-- If `hybrid` times out or fails, retry with `--strategy saas_only`.
-- If 0 results, try relaxing filters (remove location or broaden titles) before concluding the search failed.
+- **Pass the user's words verbatim.** Don't paraphrase niche industry terms — "fintech" stays "fintech", not "financial tech". The remote agent's search quality depends on those exact words being in the query.
+- **Pre-resolve ambiguous company names** before searching. If the user mentions a company that could be multiple entities (`Manus` → Manus AI / Manus Bio / Manus Plus / ...), run `lessie enrich-org --domains '[...]'` first or ask the user to disambiguate. Include the resolved domain in the query (e.g. `"... at Manus AI (manus.im)"`).
+- **0 results** → check whether the company name needs disambiguation, or restate the task with broader phrasing. Don't keep retrying the same query.
+- **`partial: true`** → the agent hit the 60s budget. Results are usable but incomplete; consider re-running with a tighter `target_count` or a more specific query.
 
 ---
 
@@ -248,7 +212,7 @@ lessie unlock-emails \
   --person-ids '["6578a1b2c3d4e5f6","6578a1b2c3d4e5f7","6578a1b2c3d4e5f8"]'
 
 # After find-people, capture search_id + person_ids then unlock
-lessie find-people --filter '{"person_titles":["CTO"]}' --checkpoint 'CTOs' --target-count 3
+lessie find-people --query "3 CTOs" --target-count 3
 # → take the search_id from the response and the person_id of each person
 lessie unlock-emails --search-id <search_id> --person-ids '["<id1>","<id2>","<id3>"]'
 ```
@@ -547,7 +511,7 @@ lessie tools --pretty
 lessie tools | jq '.[].name'
 
 # Call any tool by name with raw JSON arguments
-lessie call find_people --args '{"filter":{"person_titles":["CTO"]},"checkpoint_context":"CTOs"}'
+lessie call find_people --args '{"query":"10 CTOs at AI startups"}'
 lessie call web_search --args '{"query":"AI startups"}'
 ```
 
