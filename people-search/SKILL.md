@@ -1,7 +1,7 @@
 ---
 name: people-search
 metadata:
-  version: 2.3.0
+  version: 2.3.1
   tags: [people-search, b2b, enrichment, kol, recruiting, web-research]
 description: >
   Search, qualify, and enrich people and companies. Use this skill whenever the
@@ -184,8 +184,8 @@ Every Lessie tool call costs credits. Credit costs per tool:
 | `company-news` | 1 credit |
 | `web-search` | 1 credit |
 | `web-fetch` | 1 credit |
-| `unlock_emails` | configurable rate × number of **newly unlocked** persons. Already-unlocked persons (across any of your prior searches) are free. Failed lookups not charged |
-| `unlock_email_by_handle` | configurable rate × number of **successful** unlocks. `not_found` and `failed` are free. **Not idempotent** — re-running on the same handle re-charges |
+| `unlock_emails` | **3 credits** per newly unlocked person (current rate; check `price_per_unlock` in the response for the live value). Already-unlocked persons (across any of your prior searches) are free. Failed lookups not charged |
+| `unlock_email_by_handle` | **3 credits** per successful unlock (current rate; check `price_per_unlock` in the response for the live value). `not_found` and `failed` are free. **Not idempotent** — re-running on the same handle re-charges |
 
 **Before executing any command**, you MUST:
 
