@@ -1,7 +1,7 @@
 ---
 name: people-search
 metadata:
-  version: 2.3.1
+  version: 2.4.0
   tags: [people-search, b2b, enrichment, kol, recruiting, web-research]
 description: >
   Search, qualify, and enrich people and companies. Use this skill whenever the
@@ -207,7 +207,7 @@ If multiple tools were called in the same turn, combine them:
 
 ### CRITICAL: Read references before first CLI call
 
-**Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Do NOT guess parameter names — the CLI uses `--filter` with JSON, not `--title`/`--company` style flags.
+**Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Each tool has its own flag set — `find-people` takes `--query` (NL), `enrich-people` takes `--people` (JSON), `unlock-emails` takes `--search-id` + `--person-ids`, etc. Don't guess — read the section for the tool you're about to call.
 
 ### Search mode disambiguation (B2B vs KOL)
 
@@ -235,7 +235,7 @@ Ask: "This could be LinkedIn professionals (PMs, engineers at sleep-tech compani
 When a user mentions a company name that could refer to multiple entities (e.g., "Manus" could be Manus AI, Manus Bio, Manus Plus, etc.), disambiguate before searching:
 
 1. **Ask the user** which company they mean, or present the top candidates and let them pick.
-2. If context makes it unambiguous (e.g., user previously discussed AI agents), state your assumption and confirm: "你是指做 AI Agent 的 Manus AI (manus.im) 吗？"
+2. If context makes it unambiguous (e.g., user previously discussed AI agents), state your assumption and confirm: "Did you mean Manus AI (manus.im), the AI-agent company?"
 3. **Never silently assume** one entity over another — wrong domain = wasted search credits and irrelevant results.
 
 ## Tools overview
@@ -244,7 +244,7 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 
 | Tool | CLI command | When to use |
 |------|-------------|-------------|
-| `find_people` | `lessie find-people` | Discover people by title, company, location, seniority, audience. Default strategy is `hybrid`. **If a request times out or fails, retry with `--strategy saas_only`** — it's faster (~30s vs ~60s) and more stable, though recall may be lower |
+| `find_people` | `lessie find-people` | Discover people via a **natural-language task**. Pass the user's request verbatim through `--query`. The agent picks sources (B2B / KOL / web), keywords, and stops automatically. **Hard cap: 3 tool calls + 60s budget per request.** If the response has `partial: true`, the agent hit the budget — results are what it gathered before timeout |
 | `enrich_people` | `lessie enrich-people` | Enrich known people with full profiles. **Two paths**: B2B (via linkedin_url or name+domain → email, phone, work history) and KOL (via twitter/instagram/tiktok/youtube username → follower count, social links). Max 10 per call |
 | `review_people` | `lessie review-people` | Deep-qualify **ambiguous** candidates via web research — skip for obvious matches/mismatches |
 
@@ -282,8 +282,9 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 ## Key constraints
 
 - `enrich_people` / `enrich_organization`: max 10 per call; split larger lists into batches
-- `find_people` / `find_organizations`: paginated — use `--page` for more results
+- `find_people`: hard ceiling of **3 tool calls + 60s wall-clock budget** per request. `target_count` 1-100 (default 30). NOT paginated — if you need more, run a new call with a different query
+- `find_organizations`: paginated — use `--page` for more results
 - `web_search` caches page content; if a result has `has_content: true`, calling `web_fetch` on that URL is instant
-- Seniority levels: `owner`, `founder`, `c_suite`, `partner`, `vp`, `head`, `director`, `manager`, `senior`, `entry`, `intern`
+- Useful keywords to include in a `find-people` query: seniority terms (`owner`, `founder`, `c_suite`, `partner`, `vp`, `head`, `director`, `manager`, `senior`, `entry`, `intern`) and `current` vs `past` to bias employment recency. The agent uses these directly as filters
 - For people enrichment, providing `domain` (company domain) alongside name greatly improves match accuracy
 - CLI output is JSON on stdout, status messages on stderr — parse stdout for data
