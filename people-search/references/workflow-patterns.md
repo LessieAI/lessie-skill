@@ -127,3 +127,54 @@ lessie unlock-email-by-handle \
 **Validation:**
 - Verify the handle once before bulk: a typo costs nothing if it resolves to `not_found`, but if it accidentally resolves to a real different person's email you pay for the wrong result.
 - If the user has any historical `search_id` containing this person, prefer Pattern 6 (`unlock_emails`) — it dedups across all your searches.
+
+## 8. Unlock contact phones (from your own search results)
+
+Same shape as Pattern 6, but for company phone numbers. The two are independent — `unlock_emails` only returns emails and `unlock_phones` only returns phones. Charges are separate.
+
+```bash
+# Step 1: find — capture search_id + person_ids (same as Pattern 6)
+lessie find-people --query "10 CTOs at tech companies" --target-count 10
+# response → { "search_id": "mcp_...", "people": [{"person_id":"...", ...}, ...] }
+
+# Step 2: unlock phones
+lessie unlock-phones \
+  --search-id <from-step-1> \
+  --person-ids '["<id-of-person-1>","<id-of-person-2>"]'
+```
+
+**Pick the channel the user actually wants.** Don't unlock both email and phone by default — that's two separate charges. If the user said "find their contact info", clarify whether they want email, phone, or both before calling either tool.
+
+**Validation:**
+- The `summary` field reports `newly_unlocked` (charged) vs `already_unlocked` (free). Cross-check `points_deducted = newly_unlocked × price_per_unlock`.
+- `non_unlockable` persons have no enrichable handle on file — there is no way to get their phone; do NOT retry.
+- Per-user idempotency is **separate from email's**: unlocking the same person's email does NOT pre-unlock their phone, and vice versa.
+- Phone hit rates are typically lower than email — `non_unlockable` is more common, especially for KOL / social-only results. That's expected, not a bug.
+- Hard cap of 50 person_ids per call — split larger lists.
+
+## 9. Unlock phone by handle (LinkedIn only)
+
+Phone lookup by handle currently **only resolves for LinkedIn handles**. Other platforms (`twitter` / `instagram` / `tiktok` / `youtube`) return `not_found` with `reason="unsupported_platform"` — free of charge, but a misleading "tried and failed" UX if you don't warn the user.
+
+```bash
+# LinkedIn handle (the only platform that resolves)
+lessie unlock-phone-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"}]'
+
+# Batch — keep all entries linkedin
+lessie unlock-phone-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"},{"platform":"linkedin","handle":"ilya-sutskever"}]'
+```
+
+**If the user gives you a non-LinkedIn handle and asks for phone**, tell them up-front:
+
+> "Phone lookup currently only works for LinkedIn handles. For Twitter / Instagram / TikTok / YouTube you can use `unlock-email-by-handle` to get the email instead."
+
+Don't quietly call the tool and report back `not_found` — that wastes a round-trip and makes the agent look broken.
+
+**Critical: NOT idempotent.** Same `(linkedin, handle)` charged each time it resolves. Track within your turn which handles you've resolved.
+
+**Validation:**
+- Verify the handle once before bulk: a typo on LinkedIn handle costs nothing if it resolves to `not_found`, but if it accidentally resolves to a real different person's phone you pay for the wrong result.
+- If the user has any historical `search_id` containing this person, prefer Pattern 8 (`unlock_phones`) — it dedups across all your searches.
+- The `summary` field's `not_found` count lumps together "unsupported platform" and "LinkedIn handle has no phone on file". Inspect the per-result `reason` field if you need to distinguish.
