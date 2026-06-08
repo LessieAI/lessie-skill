@@ -47,7 +47,7 @@ Claude: Let me check if Lessie CLI is available.
         Lessie CLI installed and authorized. You're ready to go. For example:
 
         - Find people — "Find Engineering Managers at Stripe"
-        - Look up contacts — "Get Sam Altman's contact info"
+        - Look up contacts — "Get Sam Altman's email" or "Get the phone for these CTOs"
         - Research companies — "What's OpenAI been up to lately?"
 
         What would you like to search?

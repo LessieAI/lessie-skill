@@ -318,6 +318,131 @@ Per-handle `status`:
 
 ---
 
+## lessie unlock-phones
+
+Unlock company phone numbers for people from a previous `lessie find-people` result. **Per-user idempotent**: people you've already unlocked (in this search or any other) are returned at 0 cost. Only newly unlocked phones are charged.
+
+The contract is symmetric to `lessie unlock-emails` — same `search_id` + `person_ids` shape, same idempotency rules, same `status` values. Use `unlock-emails` to get the email and `unlock-phones` to get the phone; the two are independent and charged separately.
+
+### Commands
+
+```bash
+# Basic — unlock phones for 3 persons from a recent search
+lessie unlock-phones \
+  --search-id mcp_abc123 \
+  --person-ids '["6578a1b2c3d4e5f6","6578a1b2c3d4e5f7","6578a1b2c3d4e5f8"]'
+
+# After find-people, capture search_id + person_ids then unlock
+lessie find-people --query "3 CTOs" --target-count 3
+# → take the search_id from the response and the person_id of each person
+lessie unlock-phones --search-id <search_id> --person-ids '["<id1>","<id2>","<id3>"]'
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--search-id <id>` | Yes | Search ID from a prior `find-people` response you own |
+| `--person-ids '[...]'` | Yes | JSON array of `person_id` values, **1–50 items** |
+
+### Response
+
+```json
+{
+  "success": true,
+  "search_id": "mcp_abc123",
+  "results": [
+    {"person_id": "6578…6", "status": "newly_unlocked", "phone": "+1-415-555-0101"},
+    {"person_id": "6578…7", "status": "already_unlocked", "phone": "+1-650-555-0102"},
+    {"person_id": "6578…8", "status": "non_unlockable", "phone": null, "reason": "no_enrichable_handle"}
+  ],
+  "summary": {"total_requested": 3, "already_unlocked": 1, "newly_unlocked": 1, "non_unlockable": 1, "failed": 0},
+  "points_deducted": 3,
+  "price_per_unlock": 3
+}
+```
+
+Per-person `status` values (same as `unlock-emails`):
+- `newly_unlocked` — phone resolved for the first time; charged
+- `already_unlocked` — you've unlocked this person before; free
+- `non_unlockable` — no enrichable handle on this row; free
+- `failed` — resolution attempted but failed; free
+- `not_in_search` — the `person_id` doesn't belong to this `search_id`; free
+
+### AI usage guidance
+
+- **Don't unlock the phone if the user only wants email.** They are two separate charges. Pick the channel the user actually needs.
+- **Phone enrichment is currently best for LinkedIn-based search results.** B2B searches that resolved a LinkedIn handle for the person tend to have higher phone hit rates; KOL / social-only results often come back `non_unlockable`.
+- After `find-people`, you'll have `search_id` + each person's `person_id` directly in the response. Pass them through.
+- If you hit the 50-person cap, split into batches.
+- Cross-search idempotency: same person, any prior search → second unlock is free.
+
+---
+
+## lessie unlock-phone-by-handle
+
+Unlock phone numbers for known social handles, **without requiring a prior `find-people` search**. Pass a list of `{platform, handle}` pairs.
+
+**Important platform constraint:** **Only `platform="linkedin"` actually resolves** (via ContactOut). Handles for other platforms (`twitter` / `instagram` / `tiktok` / `youtube`) return `status="not_found"` with `reason="unsupported_platform"` and are **NOT charged**. This is by design — the server short-circuits non-LinkedIn handles before making any API call.
+
+**Also important**: this tool is **NOT idempotent**. Repeated calls on the same `(linkedin, handle)` will re-charge each time it resolves. Use `unlock-phones` instead when the person came from a `find-people` you ran.
+
+### Commands
+
+```bash
+# Single LinkedIn handle
+lessie unlock-phone-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"}]'
+
+# Batch (max 10) — all LinkedIn (other platforms will all return unsupported_platform)
+lessie unlock-phone-by-handle \
+  --handles '[{"platform":"linkedin","handle":"samaltman"},{"platform":"linkedin","handle":"ilya-sutskever"}]'
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `--handles '[...]'` | Yes | JSON array of HandleSpec, **1–10 items**. Each item: `{"platform": <one of linkedin/youtube/instagram/tiktok/twitter>, "handle": <bare handle string>}`. **Only `linkedin` resolves** — other platforms return `not_found` + `reason="unsupported_platform"`, free of charge |
+
+### HandleSpec fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `platform` | `string` (enum) | Schema accepts `linkedin`, `youtube`, `instagram`, `tiktok`, `twitter` — but **only `linkedin` resolves to a phone today**. Others always return unsupported |
+| `handle` | `string` | The **bare handle**, NOT a URL. For LinkedIn pass the `/in/<handle>` segment (e.g. `samaltman`). 1–200 chars |
+
+### Response
+
+```json
+{
+  "success": true,
+  "results": [
+    {"platform": "linkedin", "handle": "samaltman", "status": "unlocked", "phone": "+1-415-555-0101"},
+    {"platform": "linkedin", "handle": "fake_xyz", "status": "not_found", "phone": null},
+    {"platform": "twitter", "handle": "elonmusk", "status": "not_found", "phone": null, "reason": "unsupported_platform"}
+  ],
+  "summary": {"total_requested": 3, "unlocked": 1, "not_found": 2, "failed": 0},
+  "points_deducted": 3,
+  "price_per_unlock": 3
+}
+```
+
+Per-handle `status`:
+- `unlocked` — phone resolved; charged
+- `not_found` — no phone available for this handle (or non-LinkedIn platform → check `reason`); free
+- `failed` — exception during resolution; free
+
+### AI usage guidance
+
+- **Tell the user up-front when their handle isn't LinkedIn.** A Twitter handle will always come back `unsupported_platform`; don't appear to "try and fail" — say "phone lookup currently only works for LinkedIn handles; for Twitter you can try `unlock-email-by-handle` instead."
+- **Pass bare handles, never URLs.** `samaltman`, not `https://linkedin.com/in/samaltman`. The agent should parse the URL itself before calling.
+- **Verify the handle once before bulk operations.** A typo costs nothing on `not_found`, but if it accidentally resolves to a real different person's phone, you pay for the wrong result.
+- **Prefer `unlock_phones` when applicable.** If you ran `find-people` and the person was in the results, that flow's idempotency saves credits. Use `unlock_phone_by_handle` only when the handle wasn't surfaced by a search.
+- **Cache results in your turn's context.** The server doesn't dedup — track which LinkedIn handles you've already resolved.
+
+---
+
 ## lessie find-orgs
 
 Discover companies by name, keyword, location, size, funding, and hiring activity. At least one search option is required.

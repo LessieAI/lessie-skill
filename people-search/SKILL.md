@@ -1,7 +1,7 @@
 ---
 name: people-search
 metadata:
-  version: 2.4.0
+  version: 2.5.0
   tags: [people-search, b2b, enrichment, kol, recruiting, web-research]
 description: >
   Search, qualify, and enrich people and companies. Use this skill whenever the
@@ -186,6 +186,8 @@ Every Lessie tool call costs credits. Credit costs per tool:
 | `web-fetch` | 1 credit |
 | `unlock_emails` | **3 credits** per newly unlocked person (current rate; check `price_per_unlock` in the response for the live value). Already-unlocked persons (across any of your prior searches) are free. Failed lookups not charged |
 | `unlock_email_by_handle` | **3 credits** per successful unlock (current rate; check `price_per_unlock` in the response for the live value). `not_found` and `failed` are free. **Not idempotent** — re-running on the same handle re-charges |
+| `unlock_phones` | **3 credits** per newly unlocked person (current rate; check `price_per_unlock` in the response). Already-unlocked persons across any of your prior searches are free. `non_unlockable` / `failed` not charged. Same per-user idempotency contract as `unlock_emails` |
+| `unlock_phone_by_handle` | **3 credits** per successful unlock (current rate). Only `platform="linkedin"` actually resolves — other platforms return `not_found` with `reason="unsupported_platform"` and are free. **Not idempotent** for the same `(linkedin, handle)` pair |
 
 **Before executing any command**, you MUST:
 
@@ -207,7 +209,7 @@ If multiple tools were called in the same turn, combine them:
 
 ### CRITICAL: Read references before first CLI call
 
-**Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Each tool has its own flag set — `find-people` takes `--query` (NL), `enrich-people` takes `--people` (JSON), `unlock-emails` takes `--search-id` + `--person-ids`, etc. Don't guess — read the section for the tool you're about to call.
+**Before executing any `lessie` CLI command for the first time in a session**, you MUST read [references/cli-reference.md](references/cli-reference.md) to learn the exact parameter syntax. Each tool has its own flag set — `find-people` takes `--query` (NL), `enrich-people` takes `--people` (JSON), `unlock-emails` / `unlock-phones` take `--search-id` + `--person-ids`, `unlock-email-by-handle` / `unlock-phone-by-handle` take `--handles`, etc. Don't guess — read the section for the tool you're about to call.
 
 ### Search mode disambiguation (B2B vs KOL)
 
@@ -254,8 +256,13 @@ When a user mentions a company name that could refer to multiple entities (e.g.,
 |------|-------------|-------------|
 | `unlock_emails` | `lessie unlock-emails` | Unlock email addresses for people from a previous `find_people` result. **Per-user idempotent**: people you've already unlocked (in any search) cost 0. Takes `search_id` + `person_ids` (1–50) |
 | `unlock_email_by_handle` | `lessie unlock-email-by-handle` | Unlock email by an explicit `(platform, handle)`, **without a prior search**. Takes a list of `{platform, handle}` (1–10). **NOT idempotent** — repeat calls on the same handle re-charge. Use only when the handle isn't in any `find_people` you've run |
+| `unlock_phones` | `lessie unlock-phones` | Unlock company phone numbers for people from a previous `find_people` result. Same per-user idempotency contract as `unlock_emails` — already-unlocked people cost 0. Takes `search_id` + `person_ids` (1–50) |
+| `unlock_phone_by_handle` | `lessie unlock-phone-by-handle` | Unlock phone by an explicit `(platform, handle)`, **without a prior search**. **Only `linkedin` resolves** — other platforms return `not_found` with `reason="unsupported_platform"` and aren't charged. **NOT idempotent**. Takes a list of `{platform, handle}` (1–10) |
 
-**Decision rule:** if the person came from your own `find_people` result → use `unlock_emails` (re-unlocks are free). If you got the handle from outside lessie (a LinkedIn URL the user pasted, a manual mention, etc.) → use `unlock_email_by_handle`.
+**Decision rules:**
+- **email vs phone**: pick the contact channel the user actually needs. `unlock_emails` and `unlock_phones` are independent — calling both for the same person charges both rates. Don't unlock the phone if the user only wants email
+- **search-anchored vs handle-anchored**: if the person came from your own `find_people` result → use `unlock_emails` / `unlock_phones` (re-unlocks are free). If you got the handle from outside lessie (a LinkedIn URL the user pasted, a manual mention, etc.) → use `unlock_email_by_handle` / `unlock_phone_by_handle`
+- **phone Tier 2 is LinkedIn-only**: `unlock_phone_by_handle` with a Twitter / Instagram / TikTok / YouTube handle will return `not_found` (with `reason="unsupported_platform"`), free of charge. Tell the user up-front rather than appearing to "try and fail"
 
 ### Companies
 
