@@ -186,8 +186,8 @@ Every Lessie tool call costs credits. Credit costs per tool:
 | `web-fetch` | 1 credit |
 | `unlock_emails` | **3 credits** per newly unlocked person (current rate; check `price_per_unlock` in the response for the live value). Already-unlocked persons (across any of your prior searches) are free. Failed lookups not charged |
 | `unlock_email_by_handle` | **3 credits** per successful unlock (current rate; check `price_per_unlock` in the response for the live value). `not_found` and `failed` are free. **Not idempotent** — re-running on the same handle re-charges |
-| `unlock_phones` | **3 credits** per newly unlocked person (current rate; check `price_per_unlock` in the response). Already-unlocked persons across any of your prior searches are free. `non_unlockable` / `failed` not charged. Same per-user idempotency contract as `unlock_emails` |
-| `unlock_phone_by_handle` | **3 credits** per successful unlock (current rate). Only `platform="linkedin"` actually resolves — other platforms return `not_found` with `reason="unsupported_platform"` and are free. **Not idempotent** for the same `(linkedin, handle)` pair |
+| `unlock_phones` | **8 credits** per newly unlocked person (current rate; check `price_per_unlock` in the response). Already-unlocked persons across any of your prior searches are free. `non_unlockable` / `failed` not charged. Same per-user idempotency contract as `unlock_emails` |
+| `unlock_phone_by_handle` | **8 credits** per successful unlock (current rate). Only `platform="linkedin"` actually resolves — other platforms return `not_found` with `reason="unsupported_platform"` and are free. **Not idempotent** for the same `(linkedin, handle)` pair |
 
 **Before executing any command**, you MUST:
 
